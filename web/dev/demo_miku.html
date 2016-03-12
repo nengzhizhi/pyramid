@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - OBJLoader + MTLLoader</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000;
+				color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+			.container{
+				float: left;
+				display:inline;
+				width: 1920px;
+				height: 1026px;
+			}
+
+			#frontContainer{
+				margin-left: 25%;
+			}
+			#leftContainer{
+				width: 50%;
+				float: left;
+			}
+			#rightContainer{
+				width: 50%;
+				float: left;
+			}
+		</style>
+	</head>
+
+	<body>
+		<div class="container">
+			<div id="frontContainer"></div>
+			<div id="leftContainer"></div>
+			<div id="rightContainer"></div>
+		</div>
+
+		<script src="../build/three.min.js"></script>
+
+		<script src="js/libs/charsetencoder.min.js"></script>
+		<script src="js/libs/ammo.js"></script>
+		<script src="js/loaders/TGALoader.js"></script>
+		<script src="js/loaders/MMDLoader.js"></script>
+		<script src="js/animation/CCDIKSolver.js"></script>
+		<script src="js/animation/MMDPhysics.js"></script>
+
+		<script>
+			var mesh, cameraTarget, scene;
+			var clock = new THREE.Clock();
+
+			var frontHelper, leftHelper, rightHelper;
+			var frontContainer, leftContainer, rightContainer;
+			var frontCamera, leftCamera, rightCamera;
+			var frontRenderer, leftRenderer, rightRenderer;
+
+			initialize();
+			animate();
+
+			function initialize() {
+				frontContainer = document.getElementById('frontContainer');
+				leftContainer = document.getElementById('leftContainer');
+				rightContainer = document.getElementById('rightContainer');
+
+				frontCamera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 150 );
+				leftCamera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 150 );
+				rightCamera = new THREE.PerspectiveCamera( 80, window.innerWidth / window.innerHeight, 1, 150 );
+
+				frontCamera.position.set( 20, 20, 20 );
+				leftCamera.position.set( 20, 20, 20 );
+				rightCamera.position.set( 20, 20, 20 );
+
+				cameraTarget = new THREE.Vector3( 0, -0.25, 0 );
+				
+				// scene
+				scene = new THREE.Scene();
+
+				var ambient = new THREE.AmbientLight( 0x444444 );
+				scene.add( ambient );
+
+				var directionalLight = new THREE.DirectionalLight( 0xffeedd );
+				directionalLight.position.set( 0, 0, 1 ).normalize();
+				scene.add( directionalLight );
+
+				// model
+
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+
+				var onError = function ( xhr ) { };
+
+				frontRenderer = new THREE.WebGLRenderer();
+				leftRenderer = new THREE.WebGLRenderer();
+				rightRenderer = new THREE.WebGLRenderer();
+
+
+				frontRenderer.setPixelRatio( window.devicePixelRatio );
+				frontRenderer.setSize( window.innerWidth / 2, window.innerHeight / 2 );
+
+				leftRenderer.setPixelRatio( window.devicePixelRatio );
+				leftRenderer.setSize( window.innerWidth / 2, window.innerHeight / 2 );
+
+				rightRenderer.setPixelRatio( window.devicePixelRatio );
+				rightRenderer.setSize( window.innerWidth / 2, window.innerHeight / 2 );
+
+				frontContainer.appendChild( frontRenderer.domElement );
+				leftContainer.appendChild( leftRenderer.domElement );
+				rightContainer.appendChild( rightRenderer.domElement );
+
+				//-----------------------------------------------------------------
+				var modelFile = 'models/mmd/miku/miku_v2.pmd';
+				var vmdFiles = [ 'models/mmd/vmd/wavefile_v2.vmd' ];
+
+				frontHelper = new THREE.MMDHelper( frontRenderer );
+				leftHelper = new THREE.MMDHelper( leftRenderer );
+				rightHelper = new THREE.MMDHelper( rightRenderer );
+
+				var loader = new THREE.MMDLoader();
+				loader.setDefaultTexturePath( './models/mmd/default/' );
+
+				loader.load( modelFile, vmdFiles, function ( object ) {
+					mesh = object;
+					mesh.position.y = -10;
+
+					frontHelper.add(mesh);
+					frontHelper.setAnimation(mesh);
+					frontHelper.setPhysics(mesh);
+					frontHelper.unifyAnimationDuration({afterglow: 2.0});
+
+					leftHelper.add(mesh);
+					leftHelper.setAnimation(mesh);
+					leftHelper.setPhysics(mesh);
+					leftHelper.unifyAnimationDuration({afterglow: 2.0});
+
+					rightHelper.add(mesh);
+					rightHelper.setAnimation(mesh);
+					rightHelper.setPhysics(mesh);
+					rightHelper.unifyAnimationDuration({afterglow: 2.0});
+
+					scene.add(mesh);
+				}, onProgress, onError );
+
+				//-----------------------------------------------------------------
+
+				window.addEventListener( 'resize', onWindowResize, false );
+			}
+
+			function onWindowResize() {
+				frontCamera.aspect = window.innerWidth / window.innerHeight;
+				frontCamera.updateProjectionMatrix();
+
+				leftCamera.aspect = window.innerWidth / window.innerHeight;
+				leftCamera.updateProjectionMatrix();
+
+				rightCamera.aspect = window.innerWidth / window.innerHeight;
+				rightCamera.updateProjectionMatrix();
+
+				frontRenderer.setSize( window.innerWidth / 2, window.innerHeight / 2 );
+				leftRenderer.setSize( window.innerWidth / 2, window.innerHeight / 2 );
+				rightRenderer.setSize( window.innerWidth / 2, window.innerHeight / 2 );
+			}
+
+			//
+
+			function animate() {
+				requestAnimationFrame( animate );
+				render();
+			}
+
+			function render() {
+				var timer = Date.now() * 0.0005;
+
+				frontCamera.position.x = Math.sin( timer ) * 20;
+				frontCamera.position.z = Math.cos( timer ) * 20;
+
+				leftCamera.position.x = - Math.cos( timer ) * 20;
+				leftCamera.position.z = Math.sin( timer ) * 20;
+
+				rightCamera.position.x = Math.cos( timer ) * 20;
+				rightCamera.position.z = - Math.sin( timer ) * 20;				
+
+				frontCamera.lookAt( cameraTarget );
+				leftCamera.lookAt( cameraTarget );
+				rightCamera.lookAt( cameraTarget );
+
+				frontHelper.animate(clock.getDelta());
+				frontHelper.render(scene, frontCamera);
+
+				leftHelper.animate(clock.getDelta());
+				leftHelper.render(scene, leftCamera);
+
+				rightHelper.animate(clock.getDelta());
+				rightHelper.render(scene, rightCamera);
+			}
+
+		</script>
+
+	</body>
+</html>

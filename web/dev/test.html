@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style type="text/css">
+			body {
+				background-color: #000;
+				margin: 0px;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="../build/three.min.js"></script>
+		<script src="js/loaders/OBJLoader.js"></script>
+		<script type="text/javascript">
+			var container;
+			var camera, scene, renderer;
+
+			function initialize(){
+				container = document.getElementById('container');
+
+				camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 1, 2000);
+				camera.position.z = 250;
+
+				scene = new THREE.Scene();
+
+				var loadingManager = new THREE.LoadingManager();
+				loadingManager.onProgress = function (item, loaded, total){
+					console.log(item, loaded, total);
+				}
+
+				var texture = new THREE.Texture();
+
+				var loader = new THREE.ImageLoader(manager);
+				loader.load('textures/UV_Grid_Sm.jpg', function (image) {
+					texture.image = image;
+					texture.needsUpdate = true;
+					scene.add(texture);
+				})
+
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+			}
+
+			function animate(){
+				requestAnimationFrame( animate );
+				render();				
+			}
+
+			function render() {
+				camera.position.x += ( mouseX - camera.position.x ) * .05;
+				camera.position.y += ( - mouseY - camera.position.y ) * .05;
+
+				camera.lookAt( scene.position );
+
+				renderer.render( scene, camera );		
+			}
+		</script>
+		<div id="container"></div>
+	</body>
+</html>
